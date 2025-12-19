@@ -1,9 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 
 const initGenAI = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return null;
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI(apiKey);
 };
 
 export const getAIPlanRecommendation = async (userQuery, availablePlans) => {
@@ -27,11 +27,10 @@ export const getAIPlanRecommendation = async (userQuery, availablePlans) => {
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-    return response.text || "I couldn't generate a recommendation at this time.";
+    const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text() || "I couldn't generate a recommendation at this time.";
   } catch (error) {
     console.error("Gemini API Error:", error);
     return "Sorry, I'm having trouble connecting to the recommendation engine right now.";

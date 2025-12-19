@@ -149,7 +149,7 @@ export const AIRecommender = () => {
             </div>
 
             <div className="text-center mb-8">
-              <currentQuestion.icon className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
+              {React.createElement(currentQuestion.icon, { className: "h-16 w-16 text-yellow-400 mx-auto mb-4" })}
               <h2 className="text-2xl font-bold text-white mb-2">{currentQuestion.title}</h2>
               <p className="text-gray-400">Step {step} of 5</p>
             </div>

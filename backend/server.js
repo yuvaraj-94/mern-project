@@ -15,33 +15,74 @@ app.use(express.json());
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err.message);
+    console.log('⚠️  Server will continue with fallback data');
+  });
+
+// Handle MongoDB connection errors
+mongoose.connection.on('error', err => {
+  console.error('MongoDB error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+});
 
 // Basic route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend connected successfully!' });
 });
 
+// In-memory user storage for fallback
+let users = [];
+let userIdCounter = 1;
+
 // Register route
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
     
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    console.log('Registration attempt:', { name, email, phone });
+    
+    // Try database first
+    if (mongoose.connection.readyState === 1) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ error: 'User already exists' });
+      }
+      
+      const user = new User({ name, email, phone, password });
+      const savedUser = await user.save();
+      
+      const { password: _, ...userWithoutPassword } = savedUser.toObject();
+      return res.status(201).json({ user: userWithoutPassword });
+    }
+    
+    // Fallback to in-memory storage
+    const existingUser = users.find(u => u.email === email);
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
     
-    // Create new user
-    const user = new User({ name, email, phone, password });
-    await user.save();
+    const newUser = {
+      _id: userIdCounter++,
+      name,
+      email,
+      phone,
+      password,
+      createdAt: new Date()
+    };
     
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user.toObject();
+    users.push(newUser);
+    console.log('User registered in memory:', newUser._id);
+    
+    const { password: _, ...userWithoutPassword } = newUser;
     res.status(201).json({ user: userWithoutPassword });
+    
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -51,15 +92,26 @@ app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Find user by email
-    const user = await User.findOne({ email });
-    if (!user || user.password !== password) {
+    // Try database first
+    if (mongoose.connection.readyState === 1) {
+      const user = await User.findOne({ email });
+      if (!user || user.password !== password) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      const { password: _, ...userWithoutPassword } = user.toObject();
+      return res.json({ user: userWithoutPassword });
+    }
+    
+    // Fallback to in-memory storage
+    const user = users.find(u => u.email === email && u.password === password);
+    if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user.toObject();
+    const { password: _, ...userWithoutPassword } = user;
     res.json({ user: userWithoutPassword });
+    
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -98,10 +150,19 @@ app.get('/api/admin/stats', async (req, res) => {
 // Plan Routes
 app.get('/api/plans', async (req, res) => {
   try {
-    const plans = await Plan.find({ isActive: true });
+    const plans = await Plan.find({ isActive: true }).timeout(10000);
     res.json(plans);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Plans fetch error:', error);
+    // Fallback with sample plans if database fails
+    const fallbackPlans = [
+      { _id: '1', name: 'Basic Starter', price: 99, validity: '28 days', data: '1GB/day', description: 'Perfect for light users', isActive: true },
+      { _id: '2', name: 'Smart Saver', price: 149, validity: '28 days', data: '1.5GB/day', description: 'Great value plan', isActive: true },
+      { _id: '3', name: 'Data Booster', price: 199, validity: '28 days', data: '2GB/day', description: 'High-speed data', isActive: true },
+      { _id: '4', name: 'Popular Choice', price: 299, validity: '28 days', data: '2GB/day', description: 'Most popular plan', isActive: true },
+      { _id: '5', name: 'Power Pack', price: 399, validity: '56 days', data: '2GB/day', description: 'Long validity', isActive: true }
+    ];
+    res.json(fallbackPlans);
   }
 });
 

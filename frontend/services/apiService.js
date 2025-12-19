@@ -1,4 +1,16 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:5001';
+
+// Add CORS headers for development
+const fetchWithCORS = async (url, options = {}) => {
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      ...options.headers,
+    },
+  });
+};
 
 // Test backend connection
 export const testConnection = async () => {
@@ -55,6 +67,7 @@ export const loginUser = async (credentials) => {
 export const getAdminStats = () => apiCall('/admin/stats');
 export const getAllUsers = () => apiCall('/admin/users');
 export const getAllRecharges = () => apiCall('/admin/recharges');
+export const getOperatorStats = () => apiCall('/admin/operator-stats');
 
 // Plan APIs
 export const getPlans = () => apiCall('/plans');

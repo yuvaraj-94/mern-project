@@ -28,17 +28,14 @@ export const AdminDashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const [statsRes, operatorRes, rechargesRes, plansRes] = await Promise.all([
-        fetch('http://localhost:3001/api/admin/stats'),
-        fetch('http://localhost:3001/api/admin/operator-stats'),
-        fetch('http://localhost:3001/api/admin/recharges'),
-        fetch('http://localhost:3001/api/plans')
+      const { getAdminStats, getOperatorStats, getAllRecharges, getPlans } = await import('../services/apiService');
+      
+      const [statsData, operatorData, rechargesData, plansData] = await Promise.all([
+        getAdminStats(),
+        getOperatorStats(),
+        getAllRecharges(),
+        getPlans()
       ]);
-
-      const statsData = await statsRes.json();
-      const operatorData = await operatorRes.json();
-      const rechargesData = await rechargesRes.json();
-      const plansData = await plansRes.json();
 
       setStats(statsData);
       setOperatorStats(operatorData);
@@ -55,20 +52,16 @@ export const AdminDashboard = () => {
   const handleCreatePlan = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:3001/api/plans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...newPlan,
-          price: parseInt(newPlan.price)
-        })
+      const { createPlan } = await import('../services/apiService');
+      
+      await createPlan({
+        ...newPlan,
+        price: parseInt(newPlan.price)
       });
-
-      if (response.ok) {
-        setShowCreatePlan(false);
-        setNewPlan({ name: '', price: '', validity: '', data: '', description: '' });
-        loadDashboardData();
-      }
+      
+      setShowCreatePlan(false);
+      setNewPlan({ name: '', price: '', validity: '', data: '', description: '' });
+      loadDashboardData();
     } catch (error) {
       console.error('Failed to create plan:', error);
     }

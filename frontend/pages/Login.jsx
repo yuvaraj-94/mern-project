@@ -169,9 +169,19 @@ export const Login = () => {
         </div>
 
         {/* Helper Text */}
-        <p className="text-center text-gray-400 text-sm mt-6">
-          Demo admin: <span className="font-medium text-rose-300">admin@mobicharge.com</span> / any password
-        </p>
+        <div className="text-center mt-6 space-y-2">
+          <p className="text-gray-400 text-sm">
+            Demo Users:
+          </p>
+          <div className="bg-black/60 border border-yellow-500/30 rounded-lg p-4 text-sm">
+            <div className="text-yellow-400 font-medium mb-2">User Account:</div>
+            <div className="text-gray-300">Email: <span className="text-yellow-300">demo@mobicharge.com</span></div>
+            <div className="text-gray-300">Password: <span className="text-yellow-300">demo123</span></div>
+            <div className="text-yellow-400 font-medium mt-3 mb-2">Admin Account:</div>
+            <div className="text-gray-300">Email: <span className="text-yellow-300">admin@mobicharge.com</span></div>
+            <div className="text-gray-300">Password: <span className="text-yellow-300">admin123</span></div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -104,18 +104,9 @@ export const Payment = () => {
           
           console.log('Sending recharge data:', rechargeData);
           
-          const response = await fetch('http://localhost:3001/api/recharge', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(rechargeData)
-          });
-          
-          const result = await response.json();
+          const { createRecharge } = await import('../services/apiService');
+          const result = await createRecharge(rechargeData);
           console.log('Recharge response:', result);
-          
-          if (!response.ok) {
-            throw new Error(result.error || 'Failed to save recharge');
-          }
           
           console.log('Recharge saved successfully:', result._id);
         } catch (error) {
